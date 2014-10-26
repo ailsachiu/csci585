@@ -1,0 +1,12 @@
+drop table if exists USER_FAVORITES;
+drop table if exists LIKED_REVIEWS;
+drop table if exists VILLA_FEATURES;
+drop table if exists RESERVATION;
+drop table if exists COUPON;
+drop table if exists MANAGER;
+drop table if exists OWNER;
+drop table if exists RATE;
+drop table if exists REVIEW;
+drop table if exists FEATURES;
+drop table if exists VILLA;
+drop table if exists USER;
