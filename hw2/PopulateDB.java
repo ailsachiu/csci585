@@ -26,7 +26,7 @@ public class PopulateDB {
 		 Populate insertion statements in queries list
 */
 
-		/*
+		
 		insertStudentQueries("students.txt");		
 
 		Connection conn = null;
@@ -54,16 +54,16 @@ public class PopulateDB {
 		    System.out.println("SQLState: " + ex.getSQLState());
 		    System.out.println("VendorError: " + ex.getErrorCode());
 		}
-		*/
+		
 
 
 /**
 
 		Populate tram stops
 */
-/*
+
 		insertTramStopQueries("tramstops.txt");
-		Connection conn = null;
+		//Connection conn = null;
 
 		try {
 		    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs585_hw2","java","password");
@@ -88,7 +88,7 @@ public class PopulateDB {
 		    System.out.println("SQLState: " + ex.getSQLState());
 		    System.out.println("VendorError: " + ex.getErrorCode());
 		}
-*/
+
 
 /**
 
@@ -99,7 +99,7 @@ public class PopulateDB {
 		for(String s: queries)
 			System.out.println(s);
 		
-		Connection conn = null;
+		//Connection conn = null;
 
 		try {
 		    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs585_hw2","java","password");
