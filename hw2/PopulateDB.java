@@ -96,8 +96,8 @@ public class PopulateDB {
 */
 		
 		insertBuildingQueries("building.txt");
-		for(String s: queries)
-			System.out.println(s);
+		//for(String s: queries)
+		//	System.out.println(s);
 		
 		//Connection conn = null;
 
@@ -192,8 +192,8 @@ public class PopulateDB {
 			    // use comma as separator
 				String[] tramstop = line.split(cvsSplitBy);
 				
-				//INSERT INTO TRAMSTOPS (tram_id, location, radius) VALUES ('t1psa' , GeomFromText( ' POINT(180 120) ' ), 100); 
-				queries.add("INSERT INTO TRAMSTOPS (tram_id, location, radius) VALUES ( '" + tramstop[0].trim() 
+				//INSERT INTO TRAMSTOPS (tramstop_id, location, radius) VALUES ('t1psa' , GeomFromText( ' POINT(180 120) ' ), 100); 
+				queries.add("INSERT INTO TRAMSTOPS (tramstop_id, location, radius) VALUES ( '" + tramstop[0].trim() 
 					+ "', GeomFromText( ' POINT(" + tramstop[1].trim() + " " + tramstop[2].trim() + ") ' ), " 
 					+ tramstop[3].trim() + ");");
 	 		}

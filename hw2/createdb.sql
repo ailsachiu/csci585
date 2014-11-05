@@ -79,11 +79,11 @@ DROP TABLE IF EXISTS `TRAMSTOPS`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `TRAMSTOPS` (
-  `tram_id` varchar(20) NOT NULL,
+  `tramstop_id` varchar(20) NOT NULL,
   `location` point NOT NULL,
   `radius` int(11) NOT NULL,
-  PRIMARY KEY (`tram_id`),
-  UNIQUE KEY `tram_id` (`tram_id`),
+  PRIMARY KEY (`tramstop_id`),
+  UNIQUE KEY `tramstop_id` (`tramstop_id`),
   SPATIAL KEY `location` (`location`)
 ) ENGINE=MyISAM DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -107,4 +107,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-11-04 14:14:27
+-- Dump completed on 2014-11-04 16:55:10
