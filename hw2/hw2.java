@@ -46,6 +46,7 @@ public class hw2 {
 	public static void windowQuery(String tablename, int x0, int y0, int xf, int yf) {
 		Connection conn = null;
 		String geom = "";
+		String id = "";
 
 		try {
 		    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs585_hw2","java","password");
@@ -56,11 +57,19 @@ public class hw2 {
 		    }
 
 		    Statement stmt = conn.createStatement();
-		    if(tablename.equals("students"))
+		    if(tablename.equals("students")) {
+		    	id = "student_id";
 		    	geom = "location";
-		    else if(tablename.equals("tramstops"))
+		    }
+		    else if(tablename.equals("tramstops")) {
+		    	id = "tramstop_id";
 		    	geom = "Buffer(location,radius)";
-		    String query = "select student_id as id from " + tablename + " where ST_Within(" + geom + ",Envelope(GeomFromText('LineString(" 
+		    }
+		    else if(tablename.equals("buildings")) {
+		    	id = "building_id";
+		    	geom = "geom";
+		    }
+		    String query = "select " + id + " as id from " + tablename + " where ST_Within(" + geom + ",Envelope(GeomFromText('LineString(" 
 		    	+ x0 + " " + y0 + "," + xf + " " + yf + ")'))) order by id;";
 
 			ResultSet rs = stmt.executeQuery(query);
@@ -70,9 +79,9 @@ public class hw2 {
 		        for (int i = 1; i <= columnsNumber; i++) {
 		            if (i > 1) System.out.print(",  ");
 		            String columnValue = rs.getString(i);
-		            System.out.print(columnValue + " " + rsmd.getColumnName(i));
+		            System.out.print(columnValue); // + " " + rsmd.getColumnName(i));
 		        }
-        		System.out.println("");
+        		System.out.println();
     		}
 
 		    rs.close();
