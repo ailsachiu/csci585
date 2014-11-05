@@ -10,9 +10,10 @@ import java.sql.Statement;
 
 public class hw2 { 
 	public static void main(String args[]) {
-		if(args[0].equals("window")) {
+		String queryType = args[0].toLowerCase();
+		if(queryType.equals("window")) {
 			if(args.length < 6) {
-				System.out.println("Use: window [object] [lower x] [lower y] [upper x] [upper y]");
+				System.out.println("Use: java hw2 window [object] [lower x] [lower y] [upper x] [upper y]");
 				System.exit(0);
 			}
 
@@ -38,6 +39,21 @@ public class hw2 {
 				System.out.println("window tramstop");
 				windowQuery("tramstops", x0, y0, xf, yf);
 			}
+		}
+
+		else if(queryType.equals("within")) {
+			if(args.length < 3) {
+				System.out.println("Use: java hw2 within [student_id] [distance]");
+				System.exit(0);
+			}
+
+			String student_id = args[1].toLowerCase();
+			int distance = Integer.parseInt(args[2]);
+			if(distance < 0) {
+				System.out.println("Invalid distance");
+				System.exit(0);
+			}
+			withinQuery(student_id,distance);
 		}
 
 		System.out.println("Done");
@@ -95,5 +111,53 @@ public class hw2 {
 		    System.out.println("SQLState: " + ex.getSQLState());
 		    System.out.println("VendorError: " + ex.getErrorCode());
 		}
+	}
+
+	public static void withinQuery(String student_id, int distance) {
+		Connection conn = null;
+
+		try {
+		    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs585_hw2","java","password");
+
+		    if(conn == null) {
+		    	System.out.println("Failed connection");
+		    	System.exit(0);
+		    }
+
+		    Statement stmt = conn.createStatement();
+		    String query = "select location from students where student_id = '" + student_id + "';";
+			ResultSet rs = stmt.executeQuery(query);
+			if(!rs.next()) {
+				System.out.println("Invalid student id");
+				System.exit(0);
+			}
+
+			stmt.executeUpdate("set @loc = (select location from students where student_id = '" + student_id + "');");
+			query = "(select building_id as id from buildings where ST_Contains(Buffer(@loc," + distance + "),geom)) " 
+				+ "union (select tramstop_id from tramstops where ST_Contains(Buffer(@loc," + distance + "),location));";
+
+			rs = stmt.executeQuery(query);
+		    ResultSetMetaData rsmd = rs.getMetaData();
+		    int columnsNumber = rsmd.getColumnCount();
+		    while (rs.next()) {
+		        for (int i = 1; i <= columnsNumber; i++) {
+		            if (i > 1) System.out.print(",  ");
+		            String columnValue = rs.getString(i);
+		            System.out.print(columnValue); 
+		        }
+        		System.out.println();
+    		}
+
+		    rs.close();
+		    
+		    stmt.close();
+		    conn.close();
+
+		} catch (SQLException ex) {
+		    // handle any errors
+		    System.out.println("SQLException: " + ex.getMessage());
+		    System.out.println("SQLState: " + ex.getSQLState());
+		    System.out.println("VendorError: " + ex.getErrorCode());
+		}	
 	}
 }
