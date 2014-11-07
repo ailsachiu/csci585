@@ -90,16 +90,16 @@ public class hw2 {
 				queryOne();
 			}
 			else if(queryNumber == 2) {
-
+				queryTwo();
 			}
 			else if(queryNumber == 3) {
 				queryThree();
 			}
 			else if(queryNumber == 4) {
-
+				queryFour();
 			}
 			else if(queryNumber == 5) {
-
+				queryFive();
 			}
 		}
 
@@ -314,9 +314,9 @@ public class hw2 {
 		    sb.append("where ST_Within(location," + t1 + ") and ST_Within(location," + t2 + ")) ");
 		    sb.append("union");
 		   	sb.append("(select t1b.building_id from ");
-		   	sb.append("(select building_id from buildings where ST_Overlaps(geom," + t1 + ")) as t1b ");
+		   	sb.append("(select building_id from buildings where ST_Within(geom," + t1 + ")) as t1b ");
 		   	sb.append("inner join");
-		   	sb.append("(select building_id from buildings where ST_Overlaps(geom," + t2 + ")) as t2b ");
+		   	sb.append("(select building_id from buildings where ST_Within(geom," + t2 + ")) as t2b ");
 		   	sb.append("on t1b.building_id = t2b.building_id );");
 
 			ResultSet rs = stmt.executeQuery(sb.toString());
@@ -326,6 +326,7 @@ public class hw2 {
 		    	System.out.println("Empty result set");
 		    	return;
 		    }
+		    rs.beforeFirst(); // reset back if there are rows
 		    while (rs.next()) {
 		        for (int i = 1; i <= columnsNumber; i++) {
 		            if (i > 1) System.out.print(",  ");
@@ -346,6 +347,12 @@ public class hw2 {
 		    System.out.println("VendorError: " + ex.getErrorCode());
 		}
 	} // end of queryOne
+
+	public static void queryTwo() {
+		System.out.println("Fixed query 2");
+
+
+	} // end of queryTwo
 
 	public static void queryThree() {
 		System.out.println("Fixed query 3");
@@ -369,6 +376,12 @@ public class hw2 {
 		    ResultSetMetaData rsmd = rs.getMetaData();
 		    int columnsNumber = rsmd.getColumnCount();
 
+		    if(!rs.next()) {
+		    	System.out.println("Empty result set");
+		    	return;
+		    }
+		    rs.beforeFirst(); // reset back if there are rows
+
 		    while (rs.next()) {
 		        for (int i = 1; i <= columnsNumber; i++) {
 		            if (i > 1) System.out.print(", ");
@@ -388,5 +401,116 @@ public class hw2 {
 		    System.out.println("SQLState: " + ex.getSQLState());
 		    System.out.println("VendorError: " + ex.getErrorCode());
 		}
-	}
+	} // end of queryThree
+
+	public static void queryFour() {
+		System.out.println("Fixed query 4");
+		// We say a student is called a reverse nearest neighbor of a building if it is that
+		// building’s nearest student. Find the ID’s of the top 5 students that have the most 
+		// reverse nearest neighbors together with their number of reverse nearest neighbors.
+		Connection conn = null;
+
+		try {
+		    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs585_hw2","java","password");
+
+		    if(conn == null) {
+		    	System.out.println("Failed connection");
+		    	System.exit(0);
+		    }
+
+		    Statement stmt = conn.createStatement();
+		    
+		    StringBuffer sb = new StringBuffer("select t3.student_id, count(t3.building_id) as count from (");
+		    sb.append("select s.student_id, building_id, ST_Distance(s.location,geom) from students s inner join ");
+		    sb.append("(select building_id, geom, min(ST_Distance(location,geom)) as minDist from students, buildings group by building_id) as t2 ");
+		    sb.append(" on ST_Distance(s.location,t2.geom) = t2.minDist ) as t3 group by t3.student_id order by count desc limit 5;");
+
+			ResultSet rs = stmt.executeQuery(sb.toString());
+		    ResultSetMetaData rsmd = rs.getMetaData();
+		    int columnsNumber = rsmd.getColumnCount();
+
+		    if(!rs.next()) {
+		    	System.out.println("Empty result set");
+		    	return;
+		    }
+		    rs.beforeFirst(); // reset back if there are rows
+
+		    while (rs.next()) {
+		        for (int i = 1; i <= columnsNumber; i++) {
+		            if (i > 1) System.out.print(", ");
+		            String columnValue = rs.getString(i);
+		            System.out.print(columnValue); 
+		        }
+        		System.out.println();
+    		}
+
+		    rs.close(); 
+		    stmt.close();
+		    conn.close();
+
+		} catch (SQLException ex) {
+		    // handle any errors
+		    System.out.println("SQLException: " + ex.getMessage());
+		    System.out.println("SQLState: " + ex.getSQLState());
+		    System.out.println("VendorError: " + ex.getErrorCode());
+		}
+	} // end of queryFour
+
+	public static void queryFive() {
+		System.out.println("Fixed query 5");
+		// Find the coordinates of the lower left and upper right vertex of the MBR that fully 
+		// contains all buildings whose names are of the form ’SS%’. Note that you cannot manually figure out these buildings in your program.
+
+		Connection conn = null;
+
+		try {
+		    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs585_hw2","java","password");
+
+		    if(conn == null) {
+		    	System.out.println("Failed connection");
+		    	System.exit(0);
+		    }
+
+		    Statement stmt = conn.createStatement();
+
+		    String envelope = "(select Envelope(GeomFromText(concat(concat(\"geometrycollection(\",group_concat(AsText(geom))),\")\"))) "
+		    	+ "from( select geom from buildings where building_name like 'ss%' ) as ssBuildings)";
+
+		    String lowerLeftPoint = "(PointN((select ExteriorRing(" + envelope + ")),1))";	 // Linestring starts from 1
+		    String upperRightPoint = "(PointN((select ExteriorRing(" + envelope + ")),3))";
+		    
+		    StringBuffer sb = new StringBuffer("(select X(" + lowerLeftPoint + "), Y(" + lowerLeftPoint + ") )");
+		   	sb.append("union ");
+		   	sb.append("(select X(" + upperRightPoint + "), Y(" + upperRightPoint + ")); ");
+
+			ResultSet rs = stmt.executeQuery(sb.toString());
+		    ResultSetMetaData rsmd = rs.getMetaData();
+		    int columnsNumber = rsmd.getColumnCount();
+
+		    if(!rs.next()) {
+		    	System.out.println("Empty result set");
+		    	return;
+		    }
+		    rs.beforeFirst(); // reset back if there are rows
+
+		    while (rs.next()) {
+		        for (int i = 1; i <= columnsNumber; i++) {
+		            if (i > 1) System.out.print(", ");
+		            String columnValue = rs.getString(i);
+		            System.out.print(columnValue); 
+		        }
+        		System.out.println();
+    		}
+
+		    rs.close(); 
+		    stmt.close();
+		    conn.close();
+
+		} catch (SQLException ex) {
+		    // handle any errors
+		    System.out.println("SQLException: " + ex.getMessage());
+		    System.out.println("SQLState: " + ex.getSQLState());
+		    System.out.println("VendorError: " + ex.getErrorCode());
+		}
+	} // end of queryFive
 }
