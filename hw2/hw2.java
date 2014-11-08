@@ -188,11 +188,11 @@ public class hw2 {
 				return;
 			}
 
-			stmt.executeUpdate("set @loc = (select location from students where student_id = '" + student_id + "');");
-			query = "(select building_id as id from buildings where ST_Contains(Buffer(@loc," + distance + "),geom)) " 
-				+ "union (select tramstop_id from tramstops where ST_Contains(Buffer(@loc," + distance + "),location));";
-
-			rs = stmt.executeQuery(query);
+			String location = "(select location from students where student_id = '" + student_id + "')";
+			StringBuffer sb = new StringBuffer("( select building_id from buildings where ST_Distance(geom, " + location + ") < " + distance + " ) ");
+			sb.append("union ");
+			sb.append("( select tramstop_id from tramstops where ST_Distance(location," + location + ") < " + distance + "); ");
+			rs = stmt.executeQuery(sb.toString());
 		    ResultSetMetaData rsmd = rs.getMetaData();
 		    int columnsNumber = rsmd.getColumnCount();
 		    if(!rs.next()) {
