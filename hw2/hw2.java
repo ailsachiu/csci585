@@ -472,6 +472,8 @@ public class hw2 {
 		// We say a student is called a reverse nearest neighbor of a building if it is that
 		// building’s nearest student. Find the ID’s of the top 5 students that have the most 
 		// reverse nearest neighbors together with their number of reverse nearest neighbors.
+
+		// Different reuslt if calculating distance where building is represented as a Polygon vs. as a LineString
 		Connection conn = null;
 
 		try {
@@ -485,9 +487,9 @@ public class hw2 {
 		    Statement stmt = conn.createStatement();
 		    
 		    StringBuffer sb = new StringBuffer("select t3.student_id, count(t3.building_id) as count from (");
-		    sb.append("select s.student_id, building_id, ST_Distance(s.location,geom) from students s inner join ");
-		    sb.append("(select building_id, geom, min(ST_Distance(location,geom)) as minDist from students, buildings group by building_id) as t2 ");
-		    sb.append(" on ST_Distance(s.location,t2.geom) = t2.minDist ) as t3 group by t3.student_id order by count desc limit 5;");
+		    sb.append("select s.student_id, building_id, ST_Distance(s.location,ExteriorRing(geom)) from students s inner join ");
+		    sb.append("(select building_id, geom, min(ST_Distance(location,ExteriorRing(geom))) as minDist from students, buildings group by building_id) as t2 ");
+		    sb.append(" on ST_Distance(s.location,ExteriorRing(t2.geom)) = t2.minDist ) as t3 group by t3.student_id order by count desc limit 5;");
 
 			ResultSet rs = stmt.executeQuery(sb.toString());
 		    ResultSetMetaData rsmd = rs.getMetaData();
