@@ -32,11 +32,9 @@ public class hw2 {
 				windowQuery("students", x0, y0, xf, yf);
 			}
 			else if(object.equals("building")) {
-				System.out.println("window building");
 				windowQuery("buildings", x0, y0, xf, yf);
 			}
 			else if(object.equals("tramstop")) {
-				System.out.println("window tramstop");
 				windowQuery("tramstops", x0, y0, xf, yf);
 			}
 		} // end of window
@@ -132,12 +130,21 @@ public class hw2 {
 		    	id = "building_id";
 		    	geom = "geom";
 		    }
-		    String query = "select " + id + " as id from " + tablename + " where ST_Within(" + geom + ",Envelope(GeomFromText('LineString(" 
-		    	+ x0 + " " + y0 + "," + xf + " " + yf + ")'))) order by id;";
+		    StringBuffer sb = new StringBuffer("select ");
+		    sb.append(id + " as id from " + tablename + " where ST_Within(" + geom + ",Envelope(GeomFromText('LineString(" 
+		    	+ x0 + " " + y0 + "," + xf + " " + yf + ")'))) order by id;");
 
-			ResultSet rs = stmt.executeQuery(query);
+			ResultSet rs = stmt.executeQuery(sb.toString());
 		    ResultSetMetaData rsmd = rs.getMetaData();
 		    int columnsNumber = rsmd.getColumnCount();
+		    if(!rs.next()) {
+		    	System.out.println("Empty result set");
+		    	rs.close();
+		    	stmt.close();
+		    	conn.close();
+		    	return;
+		    }
+		    rs.beforeFirst(); // reset back if there are rows
 		    while (rs.next()) {
 		        for (int i = 1; i <= columnsNumber; i++) {
 		            if (i > 1) System.out.print(",  ");
@@ -188,6 +195,14 @@ public class hw2 {
 			rs = stmt.executeQuery(query);
 		    ResultSetMetaData rsmd = rs.getMetaData();
 		    int columnsNumber = rsmd.getColumnCount();
+		    if(!rs.next()) {
+		    	System.out.println("Empty result set");
+		    	rs.close();
+		    	stmt.close();
+		    	conn.close();
+		    	return;
+		    }
+		    rs.beforeFirst(); // reset back if there are rows
 		    while (rs.next()) {
 		        for (int i = 1; i <= columnsNumber; i++) {
 		            if (i > 1) System.out.print(",  ");
@@ -249,7 +264,7 @@ public class hw2 {
 				conn.close();
 				return;
 			}
-
+			rs.beforeFirst();
 			/*
 			set @geom = (select geom from buildings where building_id = 'b3');
 			select building_id
@@ -260,14 +275,9 @@ public class hw2 {
 			*/	
 
 			String geometry = "(select " + geom + " from " + tablename + " where " + id + " = '" + object_id + "')";
-			StringBuffer sb = new StringBuffer("select " + id + " from " + tablename + " where ST_Within(" + geom + ", Buffer(" + geometry + ",1000)) and " + id + " != '" + object_id + "' " 
+			StringBuffer sb = new StringBuffer("select ");
+			sb.append(id + " from " + tablename + " where ST_Within(" + geom + ", Buffer(" + geometry + ",1000)) and " + id + " != '" + object_id + "' " 
 				+ "order by ST_Distance(" + geom + ", " + geometry + ") limit " + numNeighbors + ";");
-			/*
-			stmt.executeUpdate("set @geom = (select " + geom + " from " + tablename + " where " + id + " = '" + object_id + "');");
-			query = "select " + id + " from " + tablename + " where ST_Within(" + geom + ", Buffer(@geom,1000)) and " + id + " != '" + object_id + "' " 
-				+ "order by ST_Distance(" + geom + ", @geom) limit " + numNeighbors + ";";
-			*/
-
 
 			rs = stmt.executeQuery(sb.toString());
 		    ResultSetMetaData rsmd = rs.getMetaData();
@@ -312,24 +322,27 @@ public class hw2 {
 		    
 		    StringBuffer sb = new StringBuffer("(select student_id as id from students ");
 		    sb.append("where ST_Within(location," + t1 + ") and ST_Within(location," + t2 + ")) ");
-		    sb.append("union");
+		    sb.append("union ");
 		   	sb.append("(select t1b.building_id from ");
 		   	sb.append("(select building_id from buildings where ST_Within(geom," + t1 + ")) as t1b ");
-		   	sb.append("inner join");
+		   	sb.append("inner join ");
 		   	sb.append("(select building_id from buildings where ST_Within(geom," + t2 + ")) as t2b ");
-		   	sb.append("on t1b.building_id = t2b.building_id );");
+		   	sb.append("on t1b.building_id = t2b.building_id ); ");
 
 			ResultSet rs = stmt.executeQuery(sb.toString());
 		    ResultSetMetaData rsmd = rs.getMetaData();
 		    int columnsNumber = rsmd.getColumnCount();
 		    if(!rs.next()) {
 		    	System.out.println("Empty result set");
+		    	rs.close();
+		    	stmt.close();
+		    	conn.close();
 		    	return;
 		    }
 		    rs.beforeFirst(); // reset back if there are rows
 		    while (rs.next()) {
 		        for (int i = 1; i <= columnsNumber; i++) {
-		            if (i > 1) System.out.print(",  ");
+		            if (i > 1) System.out.print(", ");
 		            String columnValue = rs.getString(i);
 		            System.out.print(columnValue); 
 		        }
@@ -350,7 +363,55 @@ public class hw2 {
 
 	public static void queryTwo() {
 		System.out.println("Fixed query 2");
+		// For each student, list the ID’s of the 2 nearest tram stops.
 
+		Connection conn = null;
+
+		try {
+		    conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/cs585_hw2","java","password");
+
+		    if(conn == null) {
+		    	System.out.println("Failed connection");
+		    	System.exit(0);
+		    }
+
+		    Statement stmt = conn.createStatement();
+		    
+		    StringBuffer sb = new StringBuffer("select student_id, tramstop_id from students s, tramstops t where ");
+		    sb.append("( select count(*) from students s1, tramstops t1 where ");
+		    sb.append("s1.student_id = s.student_id and ST_Distance(s1.location,t1.location) <= ST_Distance(s.location,t.location) ) <= 2 ");
+			sb.append("order by student_id, ST_Distance(s.location,t.location);");
+
+			ResultSet rs = stmt.executeQuery(sb.toString());
+		    ResultSetMetaData rsmd = rs.getMetaData();
+		    int columnsNumber = rsmd.getColumnCount();
+		    if(!rs.next()) {
+		    	System.out.println("Empty result set");
+		    	rs.close();
+		    	stmt.close();
+		    	conn.close();
+		    	return;
+		    }
+		    rs.beforeFirst(); // reset back if there are rows
+		    while (rs.next()) {
+		        for (int i = 1; i <= columnsNumber; i++) {
+		            if (i > 1) System.out.print(", ");
+		            String columnValue = rs.getString(i);
+		            System.out.print(columnValue); 
+		        }
+        		System.out.println();
+    		}
+
+		    rs.close(); 
+		    stmt.close();
+		    conn.close();
+
+		} catch (SQLException ex) {
+		    // handle any errors
+		    System.out.println("SQLException: " + ex.getMessage());
+		    System.out.println("SQLState: " + ex.getSQLState());
+		    System.out.println("VendorError: " + ex.getErrorCode());
+		}
 
 	} // end of queryTwo
 
@@ -378,6 +439,9 @@ public class hw2 {
 
 		    if(!rs.next()) {
 		    	System.out.println("Empty result set");
+		    	rs.close();
+		    	stmt.close();
+		    	conn.close();
 		    	return;
 		    }
 		    rs.beforeFirst(); // reset back if there are rows
@@ -431,6 +495,9 @@ public class hw2 {
 
 		    if(!rs.next()) {
 		    	System.out.println("Empty result set");
+		    	rs.close();
+		    	stmt.close();
+		    	conn.close();
 		    	return;
 		    }
 		    rs.beforeFirst(); // reset back if there are rows
@@ -479,7 +546,7 @@ public class hw2 {
 		    String lowerLeftPoint = "(PointN((select ExteriorRing(" + envelope + ")),1))";	 // Linestring starts from 1
 		    String upperRightPoint = "(PointN((select ExteriorRing(" + envelope + ")),3))";
 		    
-		    StringBuffer sb = new StringBuffer("(select X(" + lowerLeftPoint + "), Y(" + lowerLeftPoint + ") )");
+		    StringBuffer sb = new StringBuffer("(select X(" + lowerLeftPoint + ") as X, Y(" + lowerLeftPoint + ") as Y )");
 		   	sb.append("union ");
 		   	sb.append("(select X(" + upperRightPoint + "), Y(" + upperRightPoint + ")); ");
 
@@ -489,6 +556,9 @@ public class hw2 {
 
 		    if(!rs.next()) {
 		    	System.out.println("Empty result set");
+		    	rs.close();
+		    	stmt.close();
+		    	conn.close();
 		    	return;
 		    }
 		    rs.beforeFirst(); // reset back if there are rows
@@ -513,4 +583,5 @@ public class hw2 {
 		    System.out.println("VendorError: " + ex.getErrorCode());
 		}
 	} // end of queryFive
+
 }
