@@ -431,7 +431,7 @@ public class hw2 {
 
 		    Statement stmt = conn.createStatement();
 		    
-		    String query = "select t.tramstop_id, count(distinct b.building_id) as numBuildings from tramstops t, buildings b where ST_Distance(b.geom, t.location) <= 250 group by t.tramstop_id order by numBuildings desc;";
+		    String query = "select t.tramstop_id, count(distinct b.building_id) as numBuildings from tramstops t, buildings b where ST_Distance(b.geom, t.location) <= 250 group by t.tramstop_id order by numBuildings desc limit 1;";
 
 			ResultSet rs = stmt.executeQuery(query);
 		    ResultSetMetaData rsmd = rs.getMetaData();
