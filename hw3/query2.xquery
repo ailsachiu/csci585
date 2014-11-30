@@ -1,6 +1,6 @@
 <query2>
 {
-	let $xml := doc("/Users/ailsa/csci585-hw3/company.xml")
+	let $xml := doc("company.xml")
 	let $numEmployees := count($xml/Company/Employee)
 	
 	let $divIdForAllEmployees :=
