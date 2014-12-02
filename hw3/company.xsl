@@ -103,7 +103,7 @@
         <xsl:for-each select="Company/Department">
           <xsl:variable name="this" select="." />
           <p>
-            <span style="font-weight:bold"><xsl:value-of select="$this/deptName" /></span> houses 
+            Department <span style="font-weight:bold"><xsl:value-of select="$this/deptName" /></span> houses 
             <xsl:variable name="numHousedDept" select="count(//Division[housedDeptId=$this/deptId])" />
             <span style="font-weight:bold"><xsl:value-of select="$numHousedDept" /></span> division(s):
 
